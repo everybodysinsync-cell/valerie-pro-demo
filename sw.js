@@ -1,8 +1,8 @@
 /* VALERIE Pro service worker: keeps the app shell available offline. Data sync is handled by the app. */
-const CACHE='valerie-pro-v2';
+const CACHE='valerie-pro-v3';
 const SHELL=['./','index.html','manifest.webmanifest','icon-180.png','vendor/supabase.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET'||u.origin!==location.origin)return;
-  // network first for the page so updates arrive; cache as fallback when offline
-  e.respondWith(fetch(e.request).then(r=>{if(r.ok){const c=r.clone();caches.open(CACHE).then(x=>x.put(e.request,c))}return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('index.html'))))});
+  // network first for the page (revalidated past the HTTP cache) so updates arrive; cache as fallback when offline
+  e.respondWith(fetch(e.request.mode==='navigate'||/(index\.html|\/)$/.test(u.pathname)?new Request(u.href,{cache:'no-cache',credentials:'same-origin'}):e.request).then(r=>{if(r.ok){const c=r.clone();caches.open(CACHE).then(x=>x.put(e.request,c))}return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('index.html'))))});

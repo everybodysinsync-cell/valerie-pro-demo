@@ -590,6 +590,15 @@ select.btn,select.btn:hover,select.btn:focus{background-color:#2a5fe6!important;
 select option,select optgroup{color:#edf2fc!important;background-color:#13203a!important}
 select option:checked{color:#fff!important;background-color:#2a5fe6!important}
 select option:disabled{color:#8a97b0}
+/* Arcade (Oct 30): Continue stays pinned above the bottom nav while the explanation is read; the touch control pad
+   shows only while it does something; the game bar fits one row on a phone */
+#arq .ar-cont{position:sticky;bottom:calc(var(--arnav,0px) + 10px);z-index:6;margin:16px -14px -14px!important;padding:12px 14px;border-radius:14px;background:rgba(10,19,36,.94);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 -8px 20px rgba(0,0,0,.35)}
+#arq .ar-cont .btn{min-height:48px;padding-inline:22px}
+.arpad:not(.on){display:none!important}
+@media (max-width:520px){body.arplay .qbar .chip.blue{display:none}#arsnd .btn span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}#arsnd .btn{min-width:44px;min-height:44px;justify-content:center}}
+
+body.arplay #bnav{display:none!important}
+@media (max-width:520px){body.arplay #arq>.card.page:not(.gstory){padding:16px 14px!important}body.arplay #arq>.card.page:not(.gstory)>.row:first-child{display:none}body.arplay #arq .q{margin-bottom:14px}body.arplay #arq .opt{padding:11px 14px;margin:7px 0;min-height:48px}body.arplay #arq .gstory{padding:14px 14px}}
 /* ===== VALERIE Pro · Read ===== */
 .rd-top{margin-bottom:var(--sp5)}.rd-top .search input{font-size:16px}
 .rd-sr{margin-top:var(--sp3);max-height:60vh;overflow:auto}.rd-sr .list{display:grid;gap:6px}
@@ -3001,5 +3010,78 @@ P.qbIndex=()=>build();
   if(acc){acc[1]=acc[1].filter(x=>x[0]!=='qbank');if(P.isStaff()){const i=acc[1].findIndex(x=>x[0]==='trainer');acc[1].splice(i+1,0,['qbank','search','Question Bank'])}}return r}}
 // this file can load after sign-in has already set up the menu: set it up again and redraw it
 try{P.navSetup();if(V._cur)nav(V._cur)}catch(e){}
+})(window.PRO);
+</script><script>/* VALERIE Pro · Arcade playability pass (Oct 30). Found by playing all 11 games end to end on desktop and iPhone:
+   - the question and the Continue button were below the fold (phone: every question; desktop: Continue every time),
+     so the player scrolled down to answer, hunted for Continue, then scrolled back up to see the action;
+   - on the phone the big control pad sat between the game and the question even though it does nothing there;
+   - Who Pays?: cars could never reach the scoring point in time, so the advertised +5 per car never happened;
+   - The Ladder: 15 floors on 3 hearts, falling back to a ledge on a miss: a 70% student won about 1 run in 30;
+   - Number Crunch: points drop every second but nothing on screen showed it;
+   - Build It: no mouse control for the falling piece;
+   - a replay could serve questions from the run just played.
+   Game content and answer keys are untouched: every item still resolves to the same verified bank question. */
+(function(P){
+if(typeof AG==='undefined'||typeof arAsk!=='function')return;
+const $$=id=>document.getElementById(id);
+const navH=()=>{const b=$$('bnav');if(!b)return 0;const r=b.getBoundingClientRect();return getComputedStyle(b).display==='none'||r.height===0||r.top>=innerHeight?0:r.height};
+// scroll as little as possible so [top,bottom] (page coordinates) is on screen above the bottom nav
+function fit(top,bottom,smooth,res){const vh=innerHeight-navH()-(res||0),y=scrollY,pad=10;let to=null;
+  if(bottom-top<=vh-2*pad){if(top<y+pad)to=top-pad;else if(bottom>y+vh-pad)to=bottom-vh+pad}else if(Math.abs(top-pad-y)>4)to=top-pad;
+  if(to!==null)window.scrollTo({top:Math.max(0,to),behavior:smooth&&!arRM()?'smooth':'auto'})}
+const pg=e=>{const r=e.getBoundingClientRect();return {t:r.top+scrollY,b:r.bottom+scrollY}};
+function setNav(){document.documentElement.style.setProperty('--arnav',navH()+'px')}
+function pad(on){const p=$$('arpad');if(p)p.classList.toggle('on',!!on)}
+const later=f=>requestAnimationFrame(()=>requestAnimationFrame(()=>{try{f()}catch(e){}}));
+
+// ---- question on screen: the story card, the question and all four answers
+{const _a=arAsk;arAsk=function(){const r=_a.apply(this,arguments);const g=AR.g;if(g)g.askAt=performance.now();
+  try{if(g&&g.st==='ask'){pad(false);setNav();if(g.cur&&g.cur.id){S.arSeen=S.arSeen&&typeof S.arSeen==='object'?S.arSeen:{};const a=S.arSeen[g.k]=Array.isArray(S.arSeen[g.k])?S.arSeen[g.k]:[];a.push(g.cur.id);if(a.length>30)a.splice(0,a.length-30)}
+    later(()=>{const q=$$('arq');if(!q||!AR.g||AR.g.st!=='ask')return;const o=q.querySelectorAll('.opt');if(!o.length)return;const w=$$('arw');
+      // Policy Invaders is aimed on the game screen: keep it (and its touch pad) in view when everything fits; on a phone answer below
+      if(AR.g.G.askUpd&&w){pad(true);const b=pg(o[o.length-1]).b;if(b-pg(w).t<=innerHeight-navH()-20)return fit(pg(w).t,b,true);pad(false)}
+      fit(pg(q).t,pg(o[o.length-1]).b,true)})}}catch(e){}return r}}
+// ---- answered: show the verdict, and keep Continue pinned to the bottom of the screen while the explanation is read
+{const _g=gask;gask=function(el,q,cb,o){if(V._cur==='agame'&&o){const on=o.onAns;o=Object.assign({},o,{onAns:function(){const r=on&&on.apply(this,arguments);
+  later(()=>{const n=$$('gnext');if(n&&n.parentElement)n.parentElement.classList.add('ar-cont');const f=el.querySelector('.fb');if(f){const p=pg(f),c=n&&n.parentElement,res=c?c.offsetHeight+16:0,av=innerHeight-navH()-res-20;fit(p.t-60,Math.min(p.b,p.t-60+av),true,res)}});return r}})}return _g.call(this,el,q,cb,o)}}
+// ---- action: bring the game back on screen (with the control pad on touch screens)
+{const _a=arAct;arAct=function(){const r=_a.apply(this,arguments);try{if(AR.g&&AR.g.st==='act'){pad(true);later(()=>{const w=$$('arw');if(!w)return;const p=pg(w),pd=$$('arpad');fit(p.t,pd&&pd.offsetHeight?pg(pd).b:p.b,true)})}}catch(e){}return r}}
+{const _e=arEnd;arEnd=function(){const r=_e.apply(this,arguments);try{pad(false);later(()=>{const h=document.querySelector('.gend h2');if(h)h.textContent=h.textContent.replace(/\bboston\b/g,'Boston');const w=$$('arw'),a=$$('aragain');if(w&&a)fit(pg(w).t,pg(a).b,true)})}catch(e){}return r}}
+{const _h=arHow;arHow=function(){const r=_h.apply(this,arguments);try{if(V._cur==='agame')document.body.classList.add('arplay');pad(false);setNav()}catch(e){}return r}}
+
+// ---- no repeats from the last runs of the same game (Daily Run is the same 5 for everyone by design; The Ladder draws by tier)
+Object.keys(AG).forEach(k=>{if(k==='dc'||k==='ml')return;const G=AG[k],src=G.src;G.src=function(g){const seen=new Set((S.arSeen&&S.arSeen[k])||[]);const alt=S.pbAlt;let best=null,bo=1e9;
+  for(let t=0;t<8;t++){S.pbAlt=alt;const it=src.call(this,g)||[];const ov=it.filter(x=>x&&seen.has(x.id)).length;if(ov<bo){best=it;bo=ov;if(k==='pb')g._car=g.car}if(!ov)break}if(k==='pb'&&g._car!==undefined)g.car=g._car;return best}});
+
+// ---- Who Pays?: the tow truck clears the crash sooner and cars move fast enough to cross before the next question
+AG.wp.upd=(g,dt)=>{if(AR.tap){g.light^=1;sfx('tap')}if(g.ok&&g.p>.38)g.crash=false;g.sp-=dt;if(g.sp<=0&&(g.ok?g.p>.38:true)){g.sp=.28;const d=(Math.random()*4)|0;g.cars.push({d,s:-20,c:BCOL[(Math.random()*6)|0],done:false})}
+  g.cars.forEach(c=>{const hz=c.d<2,green=hz?g.light===0:g.light===1;const stop=(!green||g.crash)&&c.s<120&&c.s>100;if(!stop)c.s+=160*dt;if(!c.done&&c.s>128){c.done=true;g.score+=5;pop(g,'+5',c.d===2?172:c.d===3?150:c.d===0?150:170,c.d<2?70:100)}});g.cars=g.cars.filter(c=>c.s<360)};
+
+// ---- The Ladder: 5 hearts, and the first time you reach each safe ledge (5 and 10) you get a heart back
+AG.ml.lives=5;
+AG.ml.how=['Climb 15 floors. Questions get harder as you go: basics, then policies, then Massachusetts law and math.','Right: up one floor. Wrong: you fall to the last safe ledge (floor 5 or 10) and lose one of your 5 hearts. The first time you reach each safe ledge you get a heart back.','While climbing, press <kbd>Space</kbd> (or click) to grab the gem for +25.'];
+{const re=AG.ml.react;AG.ml.react=(g,ok)=>{re(g,ok);if(ok&&(g.f===5||g.f===10)&&!g['led'+g.f]){g['led'+g.f]=1;if(g.lives<5){g.lives++;pop(g,'SAFE LEDGE +1 HEART',160,40,'e')}else pop(g,'SAFE LEDGE',160,40,'e')}}}
+
+// ---- Policy Invaders on a phone: the forms scroll away while you read, so say how to answer there
+if(typeof TOUCH!=='undefined'&&TOUCH)AG.pi.how=AG.pi.how.map((h,i)=>i===1?'Shoot the form with the right answer: tap your answer below the game, or tap a form on the game screen when it is in view. Then watch the shot land.':h);
+
+// ---- Number Crunch: show the payout counting down while the question is open
+{const dr=AG.nc.draw;AG.nc.draw=(g,x)=>{dr(g,x);if(g.st==='ask'&&!g.answered&&g.askAt){const s=(performance.now()-g.askAt)/1000;const v=50+10*Math.max(0,Math.ceil(15-s));R(x,'rgba(5,11,28,.8)',100,AH-34,120,15);txtS(x,'PAYOUT +'+v,160,AH-30,v>100?'y':v>50?'o':'r',1,'c')}}}
+AG.nc.how=AG.nc.how.map(h=>h.replace('(50 + 10 per second left of 15).','(50 + 10 per second left of 15). The payout shows on the machine.'));
+
+// ---- Build It: click either side of the falling piece to nudge it (keyboard ← → and the touch pad already worked)
+{const up=AG.pb.upd;AG.pb.upd=(g,dt)=>{if(g.ok&&!g.land&&AR.ptap){g.dx+=AR.ptap.x<160+g.dx?-4:4;AR.ptap=null}up(g,dt)}}
+AG.pb.ctl='Nudge the falling piece with <kbd>←</kbd> <kbd>→</kbd> (or click either side of it) to land it centered (+25).';
+AG.pb.how=AG.pb.how.map(h=>h.replace('nudge it with <kbd>←</kbd> <kbd>→</kbd>.','nudge it with <kbd>←</kbd> <kbd>→</kbd> or click either side of it.'));
+
+// Focus mode: on phones the bottom tab bar hides while an arcade game is open (Quit stays at the top), so the
+// story, question and all four answers fit on one screen more often.
+{const _go=go;go=function(p){document.body.classList.toggle('arplay',p==='agame');return _go.apply(this,arguments)}}
+
+// No accidental answers: a tap, click or Fire meant for the action phase that lands in the first 0.6 s of the next
+// question is ignored (the question has to be on screen before an answer counts).
+const fresh=()=>{const g=AR.g;return !!(g&&g.st==='ask'&&!g.answered&&performance.now()-(g.askAt||0)<600)};
+document.addEventListener('click',e=>{if(V._cur==='agame'&&fresh()&&e.target.closest&&e.target.closest('#arq .opt')){e.preventDefault();e.stopImmediatePropagation()}},true);
+if(AG.pi){const t=AG.pi.askTap,u=AG.pi.askUpd;if(t)AG.pi.askTap=(g,x,y)=>{if(!fresh())t(g,x,y)};if(u)AG.pi.askUpd=(g,dt)=>{if(fresh())g.shot=null;u(g,dt)}}
 })(window.PRO);
 </script></body></html>
