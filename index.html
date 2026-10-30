@@ -772,7 +772,7 @@ V.outline=()=>{const secs=D.topics.map(t=>{const rows=(D.ol||[]).filter(r=>r[1]=
 render(hdr('Study','Exam outline (PL1661)','Every line of the official InsMA-PL1661 content outline (effective July 22, 2026). Each line shows how many VALERIE questions match it and your accuracy on them. Tap a line for a quiz on it (up to 10 questions). Questions are matched to lines by their key terms, so one question can appear under more than one line.')+secs,'outline')};
 V.quiz=(k)=>{if(k===undefined){render(hdr('Study','Quiz','Ten questions. You see right or wrong, with the reason, after each one.',`<button class="btn lg" onclick="go('quiz','')">${ic('shuffle')}Mixed quiz</button>`)+`<div class=sec style="margin-top:0"><h2>By unit</h2><div class=tiles>${D.units.map(u=>{const a=unitAcc(u.id);return `<button class=tile onclick="go('quiz','${u.id}')"><div class=no>${u.num}</div><div class=tt>${esc(u.title)}</div>${meter(a.p,a.p===null?'':a.p>=70?'ok':'bad')}<div class="small dim" style="margin-top:8px">${a.p===null?'Not started':a.p+'% correct · '+a.n+' answers'}</div></button>`}).join('')}</div></div>
 <div class=sec><h2>By exam outline section</h2><p class="small mut" style="margin:-4px 0 12px">Want every line of the official outline? <button class="btn ghost sm" onclick="go('outline')">${ic('units')}Open the exam outline</button></p><div class="grid g4">${D.topics.map(t=>{const a=topicAcc(t.id);return `<button class=li onclick="go('quiz','${t.id}')"><span class=tx><span class=tt style="display:block">${t.name}</span><span class=ds>${t.part} · ${t.n} on exam${a.p!==null?' · '+a.p+'%':''}</span></span></button>`}).join('')}</div></div>`,'quiz');return}
-const pool=D.qs.filter(q=>inSet(q,k));const fresh=shuffle(pool).sort((a,b)=>((S.qstat[a.id]?1:0)-(S.qstat[b.id]?1:0)));runner(shuffle(fresh.slice(0,10)),{title:'Quiz · '+(k?(U[k]?U[k].num:isOL(k)?OLR(k)[0]+' '+OLR(k)[2]:T[k].name):'Mixed'),back:isOL(k)?'outline':'quiz',unit:U[k]?k:null})};
+const pool=D.qs.filter(q=>inSet(q,k));const fresh=shuffle(pool).sort((a,b)=>((S.qstat[a.id]?1:0)-(S.qstat[b.id]?1:0)));runner(shuffle(fresh.slice(0,10)),{title:'Quiz · '+(k?(U[k]?U[k].num:isOL(k)?OLR(k)[0]+' '+OLR(k)[2]:T[k].name):'Mixed'),back:isOL(k)?'outline':'quiz',unit:U[k]?k:null,vpRef:k||'mixed'})};
 const qtag=q=>`<span class=chip>${esc(U[q.u]?U[q.u].num:'')}</span><span class=chip>${esc(T[q.t].name)}</span>`;
 const fmt=ms=>{const s=Math.floor(ms/1e3);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
 function runner(list,opt){opt=opt||{};let i=0,ans={},marks={},start=Date.now();const real=opt.exam&&(S.real||S.pearson);document.body.classList.toggle('pearson',!!(opt.exam&&S.pearson));
@@ -912,10 +912,10 @@ window._pfrev=()=>{render(`<div class=row style="margin-bottom:20px"><button cla
 page()};
 window._fin=()=>fin(false);
 window._quitpf=null;clearInterval(window._tm);window._tm=setInterval(tick,1000);tick();draw()};
-V.scen=()=>runner(shuffle(D.qs.filter(q=>q.s)),{title:'Real-life calls',back:'home'});
-V.weak=()=>{const scored=D.qs.filter(q=>isWeak(S.qstat[q.id]));let list=shuffle(scored).slice(0,15);if(list.length<15){const wt=D.units.map(u=>[u.id,unitAcc(u.id).p??0]).sort((a,b)=>a[1]-b[1]).slice(0,3).map(x=>x[0]);list=list.concat(shuffle(D.qs.filter(q=>wt.includes(q.u)&&!list.includes(q))).slice(0,15-list.length))}runner(list,{title:'Weak spots',back:'home'})};
+V.scen=()=>runner(shuffle(D.qs.filter(q=>q.s)),{title:'Real-life calls',back:'home',vpRef:'calls'});
+V.weak=()=>{const scored=D.qs.filter(q=>isWeak(S.qstat[q.id]));let list=shuffle(scored).slice(0,15);if(list.length<15){const wt=D.units.map(u=>[u.id,unitAcc(u.id).p??0]).sort((a,b)=>a[1]-b[1]).slice(0,3).map(x=>x[0]);list=list.concat(shuffle(D.qs.filter(q=>wt.includes(q.u)&&!list.includes(q))).slice(0,15-list.length))}runner(list,{title:'Weak spots',back:'home',vpRef:'weak'})};
 V.review=()=>{const l=S.flags.map(id=>Q[id]).filter(Boolean).filter(Boolean);if(!l.length){render(hdr('Practice','Saved questions')+`<div class="card empty"><div style="color:var(--blue3);margin-bottom:12px">${ic('bookmark')}</div><h3>Nothing saved yet</h3><p class=mut style="margin:8px auto 20px;max-width:44ch">Use “Save for review” on any question to keep it here for later practice.</p><button class=btn onclick="go('quiz')">Start a quiz</button></div>`,'review');return}
-render(hdr('Practice','Saved questions',l.length+' saved',`<button class=btn onclick="window._rq()">${ic('play')}Practice these</button>`)+l.map(q=>`<div class="card flat"><div class=row style="margin-bottom:8px">${qtag(q)}<span class=sp></span>${flagBtn(q.id)}</div><div style="font-weight:600">${esc(q.q)}</div><div class=small style="color:var(--ok2);margin-top:8px">${esc(q.o[q.a])}</div><div class="small mut">${xp(q.e)}</div></div>`).join(''),'review');window._rq=()=>runner(shuffle(l),{title:'Saved questions',back:'review'})};
+render(hdr('Practice','Saved questions',l.length+' saved',`<button class=btn onclick="window._rq()">${ic('play')}Practice these</button>`)+l.map(q=>`<div class="card flat"><div class=row style="margin-bottom:8px">${qtag(q)}<span class=sp></span>${flagBtn(q.id)}</div><div style="font-weight:600">${esc(q.q)}</div><div class=small style="color:var(--ok2);margin-top:8px">${esc(q.o[q.a])}</div><div class="small mut">${xp(q.e)}</div></div>`).join(''),'review');window._rq=()=>runner(shuffle(l),{title:'Saved questions',back:'review',vpRef:'saved'})};
 V.mockmenu=()=>{const mode=S.pearson?'p':S.real?'r':'i';
 render(hdr('Practice','Mock exams','105 questions weighted like the official outline: 75 general and 30 Massachusetts. '+S.minutes+' minutes.')+`
 <div class=card><div class=row style="justify-content:space-between"><div><div style="font-weight:650;margin-bottom:4px">Exam style</div><div class="small mut" style="max-width:60ch">${mode==='p'?'Looks like the Pearson VUE screen. No feedback until the end; mark questions and use the review screen.':mode==='r'?'No feedback until the end. Mark questions and use the review screen.':'See right or wrong and the reason after each question.'}</div></div>
@@ -929,7 +929,7 @@ V.light=()=>{const best=S.light.length?Math.max(...S.light):0;render(hdr('Practi
 window._lg=()=>{const pool=shuffle(D.qs.filter(q=>q.q.length<160));let i=0,sc=0,end=Date.now()+60000,lock=false;
 render(`<div class=qbar><button class="btn ghost sm" onclick="go('light')">${ic('x')}Stop</button><span class="chip blue">Lightning round</span><span class=sp></span><span class="chip tnum" id=lsc>Score 0</span><span class=timer id=tm>60s</span></div><div class=prog><i id=lp style="width:100%;transition:width .25s linear"></i></div><div id=lv></div>`,'light');
 const draw=()=>{const q=pool[i];$('lv').innerHTML=`<div class="card page" style="padding:32px"><div class=q>${esc(q.q)}</div>${q.o.map((o,k)=>`<button class=opt onclick="window._la(${k},this)"><span class=lt>${'ABCD'[k]}</span><span>${esc(o)}</span></button>`).join('')}</div>`};
-const t=()=>{const r=Math.max(0,end-Date.now());const e=$('tm');if(!e){clearInterval(window._tm);return}e.textContent=Math.ceil(r/1000)+'s';$('lp').style.width=(r/600)+'%';if(r<=0){clearInterval(window._tm);window._ans=null;S.light.push(sc);save();render(hdr('Practice','Time!')+`<div class="card empty"><div class=stat style="align-items:center;margin-bottom:8px"><span class=v data-count="${sc}">0</span><span class=l>Correct in 60 seconds</span></div><p class=mut>${sc>=best&&sc?'New best score.':'Best: '+Math.max(best,sc)}</p><div class=row style="justify-content:center"><button class=btn onclick="go('light')">Play again</button><button class="btn ghost" onclick="go('home')">Home</button></div></div>`,'light')}};
+const t=()=>{const r=Math.max(0,end-Date.now());const e=$('tm');if(!e){clearInterval(window._tm);return}e.textContent=Math.ceil(r/1000)+'s';$('lp').style.width=(r/600)+'%';if(r<=0){clearInterval(window._tm);window._ans=null;S.light.push(sc);save();try{window.vpLight&&vpLight(sc)}catch(e){}render(hdr('Practice','Time!')+`<div class="card empty"><div class=stat style="align-items:center;margin-bottom:8px"><span class=v data-count="${sc}">0</span><span class=l>Correct in 60 seconds</span></div><p class=mut>${sc>=best&&sc?'New best score.':'Best: '+Math.max(best,sc)}</p><div class=row style="justify-content:center"><button class=btn onclick="go('light')">Play again</button><button class="btn ghost" onclick="go('home')">Home</button></div></div>`,'light')}};
 window._tm=setInterval(t,250);
 window._la=(k,el)=>{if(lock)return;lock=true;const q=pool[i];const ok=k===q.a;rec(q,ok);if(ok)sc++;$('lsc').textContent='Score '+sc;const os=document.querySelectorAll('#lv .opt');os.forEach(b=>b.disabled=true);os[q.a].classList.add('ok');if(!ok)os[k].classList.add('bad');setTimeout(()=>{i++;lock=false;if($('lv'))draw()},ok?350:900)};
 window._ans=k=>window._la(k);draw()}};
@@ -1113,7 +1113,7 @@ function gDC(){const d=today();S.games=S.games||{};const g=S.games.dc=S.games.dc
   const q=list[i];gprog(i,5,'Question '+(i+1)+' of 5');gask($('gv'),q,()=>{i++;step()},{tag:`<span class="chip red">${ic('cal')}${d}</span>${qtag(q)}`,last:i===4,onAns:ok=>{rec(q,ok);if(ok)c++;gscore(c*100,ok)}})};step()}
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.ctrlKey||e.metaKey||e.altKey)return;if(window._gk&&/^(game)$/.test(V._cur))window._gk(e)});
 /* weak drill: game misses first */
-(function(){const W=V.weak;V.weak=()=>{const gm=(S.gmiss||[]).map(GQ).filter(Boolean);if(!gm.length)return W();const scored=D.qs.filter(q=>isWeak(S.qstat[q.id]));let list=shuffle(gm).slice(0,8);list=list.concat(shuffle(scored).slice(0,15-list.length));if(list.length<15){const wt=D.units.map(u=>[u.id,unitAcc(u.id).p??0]).sort((a,b)=>a[1]-b[1]).slice(0,3).map(x=>x[0]);list=list.concat(shuffle(D.qs.filter(q=>wt.includes(q.u)&&!list.includes(q))).slice(0,15-list.length))}runner(list,{title:'Weak spots',back:'home'})}})();
+(function(){const W=V.weak;V.weak=()=>{const gm=(S.gmiss||[]).map(GQ).filter(Boolean);if(!gm.length)return W();const scored=D.qs.filter(q=>isWeak(S.qstat[q.id]));let list=shuffle(gm).slice(0,8);list=list.concat(shuffle(scored).slice(0,15-list.length));if(list.length<15){const wt=D.units.map(u=>[u.id,unitAcc(u.id).p??0]).sort((a,b)=>a[1]-b[1]).slice(0,3).map(x=>x[0]);list=list.concat(shuffle(D.qs.filter(q=>wt.includes(q.u)&&!list.includes(q))).slice(0,15-list.length))}runner(list,{title:'Weak spots',back:'home',vpRef:'weak'})}})();
 
 /* splash */
 (function(){const s=document.createElement('div');s.id='splash';s.setAttribute('aria-hidden','true');s.innerHTML=`<div class=spl><div class=splm>${LOGO_MARK}</div><div class=splw>${LOGO_WORD}</div><div class=spls>${esc(APP.sub)}</div></div>`;document.body.appendChild(s);const t=RM.matches?250:1150;setTimeout(()=>{s.classList.add('out');setTimeout(()=>s.remove(),RM.matches?0:450)},t)})();
@@ -1430,7 +1430,14 @@ const RZ={
   weakSec:60,         // no outline section may be below this for the Exam Ready Zone
   capNone:80,         // cap with no recent full exam
   capPlus:10,         // cap = best recent full exam + this
-  pts:{quizQ:1,section:40,full:100,maiaQ:1,maiaMax:40,game:3,lightning:3,arcade:3,card:0.2}
+  pts:{quizQ:1,section:40,full:100,maiaQ:1,maiaMax:40,game:3,lightning:3,arcade:3,card:0.2,read:0},
+  // Anti-inflation (audit 2026-10-29)
+  repeatW:0.25,       // a re-answer of the same question on the same day counts a quarter (memory, not knowledge)
+  gameW:0.5,          // answers given inside games, arcade and Lightning count half
+  repeatFull:25,      // a retaken exam form still adds section evidence, but only 25 (not 100) ...
+                      // ... and never counts toward the blend, the cap or the Exam Ready Zone
+  freshMin:0.5,       // a mock exam counts as a first try only if at least half its questions were new to the trainee
+  staleLoss:0.15      // knowledge fades: an answer's accuracy is trimmed up to 15% as it ages (staleness half-life 45 days)
 };
 P.SECS=SECS;P.OW=OW;P.RZ=RZ;
 const DAY=864e5;
@@ -1438,37 +1445,54 @@ const secName=t=>(typeof T!=='undefined'&&T[t]?T[t].name:t);
 P.secName=secName;
 P.secShort={P:'Property',C:'Casualty',T:'Terms',K:'Provisions',M1:'MA All Lines',M2:'MA P&C',M3:'MA Property',M4:'MA Auto'};
 
-// ---- full exams in a state, normalised: {ts,p,bt:{sec:[c,n]},src,title}
+// ---- full exams in a state, normalised: {ts,p,bt:{sec:[c,n]},src,title,key,first}
+// key = the exam form ('pf:3', 'mock:Mock Exam 2'). Only the first try of a form counts as a first try;
+// a mock also needs freshMin of its questions to be new (fx, recorded when the exam starts).
 function fullExams(st){
   const out=[];
-  (st.mocks||[]).forEach(m=>{if(!m||typeof m.p!=='number'||!(m.n>=50))return;const bt={};for(const k in (m.bt||{}))bt[k]=[m.bt[k].c,m.bt[k].n];out.push({ts:m.ts||Date.parse(m.date)||0,p:m.p,bt,src:'mock',title:m.title||'Mock exam'})});
-  (Array.isArray(st.pf)?st.pf:[]).forEach(r=>{if(!r||typeof r.sc!=='number')return;out.push({ts:r.ts||Date.parse(r.date)||0,p:r.sc,bt:r.bs||{},src:'pf',title:'Pearson-Format Test '+((r.x|0)+1)})});
-  return out.sort((a,b)=>a.ts-b.ts);
+  (st.mocks||[]).forEach(m=>{if(!m||typeof m.p!=='number'||!(m.n>=50))return;const bt={};for(const k in (m.bt||{}))bt[k]=[m.bt[k].c,m.bt[k].n];const t=m.title||'Mock exam';
+    out.push({ts:m.ts||Date.parse(m.date)||0,p:m.p,bt,src:'mock',title:t,key:/^Random/.test(t)?null:'mock:'+t,fx:typeof m.fx==='number'?m.fx:null})});
+  (Array.isArray(st.pf)?st.pf:[]).forEach(r=>{if(!r||typeof r.sc!=='number')return;out.push({ts:r.ts||Date.parse(r.date)||0,p:r.sc,bt:r.bs||{},src:'pf',title:'Pearson-Format Test '+((r.x|0)+1),key:'pf:'+(r.x|0),fx:null})});
+  out.sort((a,b)=>a.ts-b.ts);
+  const seen=new Set();
+  out.forEach(x=>{x.first=!(x.key&&seen.has(x.key))&&!(x.fx!=null&&x.fx<RZ.freshMin);if(x.key)seen.add(x.key)});
+  return out;
 }
 P.fullExams=fullExams;
+
+// ---- one question's score. Same rule as the study app's qScore (half-life 21 days, newest answer x2,
+// staleness half-life 45 days, card-made questions half weight) plus two anti-inflation rules:
+// a same-day re-answer counts RZ.repeatW, and an answer given in a game counts RZ.gameW (r entry [day,ok,'g']).
+P.dayOf=ms=>Math.floor((ms-new Date(ms).getTimezoneOffset()*6e4)/DAY);
+P.qScore=function(id,s,dN){const q=(typeof Q!=='undefined')?Q[id]:null;if(!q||!s)return null;dN=dN==null?P.dayOf(Date.now()):dN;
+  const hasR=Array.isArray(s.r)&&s.r.length;const r=hasR?s.r:[[dN-30,s.l===1?1:0]];let num=0,den=0,src=0;
+  r.forEach((x,i)=>{let w=Math.pow(.5,Math.max(0,dN-x[0])/21);if(i===r.length-1)w*=2;if(i>0&&r[i-1][0]===x[0])w*=RZ.repeatW;const g=x[2]==='g'?RZ.gameW:1;w*=g;src+=g;num+=w*(x[1]?1:0);den+=w});
+  let acc=den?num/den:0;if(!hasR){const n=(s.c||0)+(s.w||0);acc=.5*acc+.5*(n?s.c/n:0)}
+  const fresh=Math.pow(.5,Math.max(0,dN-r[r.length-1][0])/45);acc*=1-RZ.staleLoss*(1-fresh);const tw=/^[cd]\d/.test(id)?.5:1;return {acc,w:tw*(src/r.length)*(.4+.6*fresh),t:q.t}};
 
 // ---- readiness: pure function of a saved state
 P.readiness=function(st,now){
   now=now||Date.now();st=st||{};
   const ev={};SECS.forEach(s=>ev[s]={w:0,a:0,bankW:0,bankA:0,n:0,tests:0,exams:0});
   // 1) practice bank: each question once, recent answers count most (qScore: half-life 21 days)
-  const qs=st.qstat||{};
-  for(const id in qs){const r=(typeof qScore==='function')?qScore(id,qs[id]):null;if(!r||!ev[r.t])continue;const e=ev[r.t];e.n++;e.bankW+=r.w*RZ.pts.quizQ;e.bankA+=r.w*r.acc*RZ.pts.quizQ}
+  const qs=st.qstat||{},dN=P.dayOf(now);
+  for(const id in qs){const r=P.qScore(id,qs[id],dN);if(!r||!ev[r.t])continue;const e=ev[r.t];e.n++;e.bankW+=r.w*RZ.pts.quizQ;e.bankA+=r.w*r.acc*RZ.pts.quizQ}
   SECS.forEach(s=>{const e=ev[s];e.w+=e.bankW;e.a+=e.bankA});
   // 2) section tests in the window: 40 points each (4x a 10-question quiz)
   (st.sect||[]).forEach(x=>{if(!x||!ev[x.t]||now-x.ts>RZ.windowDays*DAY||!x.n)return;const e=ev[x.t];e.w+=RZ.pts.section;e.a+=RZ.pts.section*x.c/x.n;e.tests++});
   // 3) full exams in the window: 100 points each, split across sections by question count
   const fx=fullExams(st),recent=fx.filter(x=>now-x.ts<=RZ.windowDays*DAY);
-  recent.forEach(x=>{let N=0;for(const k in x.bt)N+=x.bt[k][1]||0;if(!N)return;for(const k in x.bt){const e=ev[k];const c=x.bt[k][0],n=x.bt[k][1];if(!e||!n)continue;const w=RZ.pts.full*n/N;e.w+=w;e.a+=w*c/n;e.exams++}});
-  const rows=SECS.map(s=>{const e=ev[s];const need=Math.max(6,Math.round(OW[s]*1.5));const acc=e.w?e.a/e.w:0;const conf=Math.min(1,e.w/need);return {t:s,acc,conf,score:acc*conf,evidence:e.w,need,n:e.n,tests:e.tests,exams:e.exams}});
+  recent.forEach(x=>{let N=0;for(const k in x.bt)N+=x.bt[k][1]||0;if(!N)return;const W=x.first?RZ.pts.full:RZ.repeatFull;for(const k in x.bt){const e=ev[k];const c=x.bt[k][0],n=x.bt[k][1];if(!e||!n)continue;const w=W*n/N;e.w+=w;e.a+=w*c/n;e.exams++}});
+  const firsts=recent.filter(x=>x.first);
+  const rows=SECS.map(s=>{const e=ev[s];const need=Math.max(6,Math.round(OW[s]*1.5));const acc=e.w?e.a/e.w:0;const conf=Math.min(1,e.w/need);return {t:s,acc,conf,score:acc*conf,evidence:e.w,need,n:e.n,tests:e.tests,exams:e.exams,low:conf<1}});
   let tot=0,sum=0;rows.forEach(r=>{sum+=OW[r.t]*r.score;tot+=OW[r.t]});
   const bank=100*sum/tot;
-  const last2=recent.slice(-2);let v,cap;
+  const last2=firsts.slice(-2);let v,cap;
   if(!last2.length){v=bank;cap=RZ.capNone}
   else if(last2.length===1){v=.75*bank+.25*last2[0].p;cap=last2[0].p+RZ.capPlus}
   else{v=.6*bank+.4*(last2[0].p+last2[1].p)/2;cap=Math.max(last2[0].p,last2[1].p)+RZ.capPlus}
   v=Math.round(Math.max(0,Math.min(100,v,cap)));
-  const zoneEx=fx.filter(x=>now-x.ts<=RZ.zoneDays*DAY&&x.p>=RZ.zoneMin);
+  const zoneList=fx.filter(x=>x.first&&now-x.ts<=RZ.zoneDays*DAY&&x.p>=RZ.zoneMin),zoneEx=zoneList;
   const weak=rows.filter(r=>100*r.score<RZ.weakSec);
   const need=[];
   if(v<RZ.zoneMin)need.push('readiness '+RZ.zoneMin+' or more (now '+v+')');
@@ -1476,12 +1500,16 @@ P.readiness=function(st,now){
   if(weak.length)need.push('every section at '+RZ.weakSec+'%+ (now below: '+weak.map(r=>P.secShort[r.t]).join(', ')+')');
   const stage=!need.length?'Exam Ready Zone':v>=RZ.closeMin?'Closing In':'Building';
   const seen=Object.keys(qs).length;
-  return {v,bank:Math.round(bank),cap:Math.round(Math.min(100,cap)),stage,rows,recent,last2,zoneEx:zoneEx.length,weak:weak.map(r=>r.t),need,seen,fullCount:fx.length};
+  // zoneUntil: when the stage stops being valid without new work (2nd-newest qualifying exam leaves the 21-day window)
+  const zoneUntil=stage==='Exam Ready Zone'?zoneList[zoneList.length-2].ts+RZ.zoneDays*DAY:null;
+  const evTot=rows.reduce((a,r)=>a+r.evidence,0),needTot=rows.reduce((a,r)=>a+r.need,0);
+  return {v,bank:Math.round(bank),cap:Math.round(Math.min(100,cap)),stage,rows,recent,last2,zoneEx:zoneEx.length,weak:weak.map(r=>r.t),need,seen,fullCount:fx.length,
+    repeats:recent.filter(x=>!x.first).length,zoneUntil,enough:evTot>=needTot/2||firsts.length>0,low:rows.filter(r=>r.low).map(r=>r.t)};
 };
 P.stageClass=s=>s==='Exam Ready Zone'?'ok':s==='Closing In'?'blue':'red';
 
 // ---- points (study effort). Stored as S.ptl=[[ts,points,kind,ref],...]
-P.pointsFor=function(kind,n){const p=RZ.pts;return kind==='full'?p.full:kind==='section'?p.section:kind==='quiz'?p.quizQ*(n||0):kind==='maia'?Math.min(p.maiaMax,p.maiaQ*(n||0)):kind==='flashcards'?Math.round(p.card*(n||0)*10)/10:(kind==='game'||kind==='lightning'||kind==='arcade')?p.game:0};
+P.pointsFor=function(kind,n){const p=RZ.pts;return kind==='full'?p.full:kind==='section'?p.section:kind==='quiz'?p.quizQ*(n||0):kind==='maia'?Math.min(p.maiaMax,p.maiaQ*(n||0)):kind==='flashcards'?Math.round(p.card*(n||0)*10)/10:(kind==='game'||kind==='lightning'||kind==='arcade')?p.game:0};   // 'read' = 0: reading never earns readiness or points
 P.pointsTotal=(st,since)=>(st.ptl||[]).reduce((a,x)=>a+(!since||x[0]>=since?x[1]:0),0);
 
 // ---- spaced repetition of missed questions. S.srs[id]={b:box,due:ms,t:ms}
@@ -1701,7 +1729,10 @@ function DemoAPI(){
     escalate(f,'Question Bank report');const c=db.corr.find(x=>x.from_flag_id===f.id);Object.assign(c,{reporter_id:sid(),error_type:r.error_type,proposed_answer:r.proposed_answer||null,proposed_text:fix.slice(0,4000),source_citation:String(r.source_citation||'').slice(0,500),original:Object.assign({},r.original||{},{what:what.slice(0,1000)})});
     audit('qb_flag',null,null,{question:f.question_id,flag:f.id,correction:c.id});persist();return f.id};
   function escalate(f,why){if(!db.corr.some(c=>c.from_flag_id===f.id))db.corr.push({id:uid(),reporter_id:f.user_id,content_id:f.question_id,content_kind:'question',error_type:'flagged',original:{note:f.note},proposed_answer:null,proposed_text:f.note,proposed_explanation:'',source_citation:'',status:'new',admin_notes:why,from_flag_id:f.id,created_at:new Date().toISOString()});f.status='escalated'}
-  const sumOf=u=>db.summary.find(s=>s.user_id===u)||{readiness:0,stage:'Building',points:0,section_scores:{},recent_full:[],exam_date:null};
+  // Stored stage is what the trainee's device last computed. The Exam Ready Zone expires on its own when the
+// qualifying exams age out (zone_until), even if the trainee never opens the app again (same rule as SQL eff_stage).
+  const effStage=s=>s.stage==='Exam Ready Zone'&&!(s.zone_until&&Date.parse(s.zone_until)>Date.now())?((s.readiness||0)>=60?'Closing In':'Building'):s.stage;
+  const sumOf=u=>{const s=db.summary.find(s=>s.user_id===u)||{readiness:0,stage:'Building',points:0,section_scores:{},section_conf:{},recent_full:[],exam_date:null};return Object.assign({},s,{stage:effStage(s)})};
   const lastActive=u=>{let t=0;db.activity_events.forEach(e=>{if(e.user_id===u)t=Math.max(t,Date.parse(e.occurred_at))});db.answers.forEach(a=>{if(a.user_id===u)t=Math.max(t,Date.parse(a.answered_at))});return t||null};
   const pacingOf=u=>{const x=db.activity_events.filter(e=>e.user_id===u&&e.kind==='full'&&e.minutes!=null).sort((a,b)=>b.occurred_at<a.occurred_at?-1:1).slice(0,3);if(!x.length)return '';const to=x.filter(e=>e.timed_out).length,r=x.filter(e=>e.minutes<.5*(e.time_limit_min||120)&&(e.score_pct||0)<75).length;return to>=2||x[0].timed_out?'out_of_time':r>=2?'rushing':'ok'};
   const asgDone=(a,u)=>db.activity_events.some(e=>e.user_id===u&&(e.assignment_id===a.id||(e.kind===a.kind&&(e.ref===a.ref||a.ref===a.kind+':any')&&e.occurred_at>=a.created_at)));
@@ -1709,7 +1740,7 @@ function DemoAPI(){
     return members(cid).map(u=>{const p=db.users.find(x=>x.id===u)||{},s=sumOf(u),la=lastActive(u),di=la?Math.floor((today-new Date(new Date(la).setHours(0,0,0,0)))/DAY):null;
       const inact7=!la||Date.now()-la>7*DAY,inact3=!la||Date.now()-la>3*DAY;const res=db.exam_results.filter(r=>r.user_id===u).sort((a,b)=>a.exam_date<b.exam_date?1:-1)[0];
       const fm=db.activity_events.filter(e=>e.user_id===u&&e.kind==='full'&&e.minutes!=null);
-      return {user_id:u,full_name:p.full_name,email:p.email,readiness:s.readiness,stage:s.stage,points:s.points,section_scores:s.section_scores,recent_full:s.recent_full,last_active:la?new Date(la).toISOString():null,days_inactive:di,
+      return {user_id:u,full_name:p.full_name,email:p.email,readiness:s.readiness,stage:s.stage,points:s.points,section_scores:s.section_scores,section_conf:s.section_conf||{},zone_until:s.zone_until||null,recent_full:s.recent_full,last_active:la?new Date(la).toISOString():null,days_inactive:di,
         at_risk:!(res&&res.result==='pass')&&(s.readiness<50||inact7),risk_reason:res&&res.result==='pass'?'':!la?'No activity yet':inact7?'No activity in 7+ days':s.readiness<50?'Readiness under 50':'',
         full_exams:db.activity_events.filter(e=>e.user_id===u&&e.kind==='full').length,assignments_done:asg.filter(a=>asgDone(a,u)).length,assignments_total:asg.length,
         exam_result:res?res.result:null,exam_date:res?res.exam_date:null,planned_exam_date:s.exam_date,
@@ -1811,13 +1842,13 @@ function seed(){
   const classes=[cls,{id:C2,name:'Summer 2026 Day Class',join_code:'517204',owner_id:'d-tr2',archived:false},{id:C3,name:'Winter 2027 Evening',join_code:'630518',owner_id:'d-tr3',archived:false}];
   const clsOf={'d-ana':C1};T.forEach(x=>clsOf[x[0]]=x[5]);G.forEach(x=>clsOf[x[0]]=x[4]);
   const members=users.filter(u=>u.role==='trainee').map(u=>({class_id:clsOf[u.id]||C1,user_id:u.id,joined_at:iso(now-(clsOf[u.id]===C3?20:clsOf[u.id]===C2?110:40)*DAY)}));
-  const W={P:1,C:1,T:1,K:1,M1:1,M2:1,M3:1,M4:1};
+  const W={P:1,C:1,T:1,K:1,M1:1,M2:1,M3:1,M4:1},RZD=P.RZ.zoneDays;
   const summary=[],events=[],qstats=[],tags=[],history=[],results=[];
   const qs=(typeof D!=='undefined'?D.qs:[]).filter(q=>P.SECS.includes(q.t));
   T.forEach(([id,name,lvl,inactive,examIn],k)=>{
     const sc={};P.SECS.forEach((s,j)=>{sc[s]=Math.max(.2,Math.min(.97,lvl+(rnd()-.5)*.3-(s==='M4'||s==='T'?.08:0)))});
     const rd=Math.round(100*lvl*(.9+rnd()*.12));const zone=rd>=75&&lvl>=.8;
-    summary.push({user_id:id,readiness:Math.min(96,rd),stage:zone?'Exam Ready Zone':rd>=60?'Closing In':'Building',points:Math.round(400+lvl*900),section_scores:sc,recent_full:[],srs_due:Math.round(rnd()*20),exam_date:day(now+examIn*DAY)});
+    summary.push({user_id:id,readiness:Math.min(96,rd),stage:zone?'Exam Ready Zone':rd>=60?'Closing In':'Building',zone_until:zone?iso(now+(RZD-(inactive+4))*DAY):null,section_conf:Object.fromEntries(P.SECS.map(s=>[s,1])),points:Math.round(400+lvl*900),section_scores:sc,recent_full:[],srs_due:Math.round(rnd()*20),exam_date:day(now+examIn*DAY)});
     for(let d=0;d<4;d++){const t=now-(inactive+1+d*3)*DAY-rnd()*DAY;const p=Math.round(100*(lvl-.06+rnd()*.12));const fast=id==='d-gus'||id==='d-jon',slow=id==='d-cy';
       const mins=fast?Math.round(38+rnd()*14):slow?120:Math.round(78+rnd()*30);events.push({id:'e'+id+d,user_id:id,kind:'full',ref:'pf:'+d,title:'Pearson-Format Test '+(d+1),n_questions:115,n_correct:Math.round(p*1.05),score_pct:p,passed:p>=70,points:100,minutes:mins,time_limit_min:120,timed_out:slow,n_answered:slow?101+d:115,occurred_at:iso(t),section_scores:null})}
     for(let d=0;d<6;d++)events.push({id:'q'+id+d,user_id:id,kind:'quiz',ref:'quiz:mixed',title:'Quiz',n_questions:10,n_correct:Math.round(10*lvl),points:10,occurred_at:iso(now-(inactive+d)*DAY-3600e3)});
@@ -1828,12 +1859,12 @@ function seed(){
   // a few questions most of the class misses
   ['h','n'].forEach(()=>{});
   qs.filter(q=>q.t==='M4').slice(3,7).concat(qs.filter(q=>q.t==='T').slice(10,13)).forEach((q,j)=>T.forEach(([id])=>{if(rnd()<.75)qstats.push({user_id:id,question_id:q.id,section:q.t,attempts:2,correct:j%2?1:0,wrong:j%2?1:2,last_at:iso(now-2*DAY)})}));
-  G.forEach(([id,n,stage,res,c],k)=>{const ago=c===C2?20+(k-8)*17:10+k*6;results.push({id:'r'+id,user_id:id,exam_date:day(now-ago*DAY),result:res,readiness_at_log:stage==='Exam Ready Zone'?80+k:55+k,stage_at_log:stage,note:'',hard_topics:res==='retake'?'Merit Rating points, MA auto Part 4 limits':'',created_at:iso(now-ago*DAY)});summary.push({user_id:id,readiness:stage==='Exam Ready Zone'?82:58,stage,points:900,section_scores:{},recent_full:[],exam_date:null});events.push({id:'g'+id,user_id:id,kind:'quiz',ref:'quiz:mixed',title:'Quiz',n_questions:10,n_correct:8,points:10,occurred_at:iso(now-ago*DAY)})});
+  G.forEach(([id,n,stage,res,c],k)=>{const ago=c===C2?20+(k-8)*17:10+k*6;results.push({id:'r'+id,user_id:id,exam_date:day(now-ago*DAY),result:res,readiness_at_log:stage==='Exam Ready Zone'?80+k:55+k,stage_at_log:stage,note:'',hard_topics:res==='retake'?'Merit Rating points, MA auto Part 4 limits':'',created_at:iso(now-ago*DAY)});summary.push({user_id:id,readiness:stage==='Exam Ready Zone'?82:58,stage,zone_until:stage==='Exam Ready Zone'?iso(now-ago*DAY):null,points:900,section_scores:{},recent_full:[],exam_date:null});events.push({id:'g'+id,user_id:id,kind:'quiz',ref:'quiz:mixed',title:'Quiz',n_questions:10,n_correct:8,points:10,occurred_at:iso(now-ago*DAY)})});
   // one past student retook and then passed: the first attempt still counts as not passed
   results.push({id:'rd-g11b',user_id:'d-g11',exam_date:day(now-8*DAY),result:'pass',readiness_at_log:79,stage_at_log:'Exam Ready Zone',note:'',hard_topics:'',created_at:iso(now-8*DAY)});
   // Ana (the demo trainee account) starts with the same progress her device gets on first sign-in
-  try{const st=P.demoState(),r=P.readiness(st),sc={};r.rows.forEach(x=>{if(x.evidence>0)sc[x.t]=Math.round(1000*x.score)/1000});
-    summary.push({user_id:'d-ana',readiness:r.v,stage:r.stage,points:Math.round(P.pointsTotal(st)),section_scores:sc,recent_full:P.fullExams(st).slice(-3).map(x=>({p:Math.round(x.p),at:iso(x.ts)})),srs_due:P.srsDue(st).length,exam_date:st.examDate});
+  try{const st=P.demoState(),r=P.readiness(st),sc={},cf={};r.rows.forEach(x=>{if(x.evidence>0){sc[x.t]=Math.round(1000*x.score)/1000;cf[x.t]=Math.round(100*x.conf)/100}});
+    summary.push({user_id:'d-ana',readiness:r.v,stage:r.stage,zone_until:r.zoneUntil?iso(r.zoneUntil):null,points:Math.round(P.pointsTotal(st)),section_scores:sc,section_conf:cf,recent_full:P.fullExams(st).slice(-3).map(x=>({p:Math.round(x.p),at:iso(x.ts)})),srs_due:P.srsDue(st).length,exam_date:st.examDate});
     st.pf.forEach((x,k)=>events.push({id:'eana'+k,user_id:'d-ana',kind:'full',ref:'pf:'+k,title:'Pearson-Format Test '+(k+1),n_questions:115,n_correct:x.c,score_pct:x.sc,passed:x.pass,points:100,minutes:x.min,time_limit_min:120,timed_out:false,n_answered:115,occurred_at:iso(x.ts),section_scores:x.bs}));
     events.push({id:'qana',user_id:'d-ana',kind:'quiz',ref:'quiz:mixed',title:'Quiz',n_questions:10,n_correct:8,points:10,occurred_at:iso(now-DAY)});
     for(let d=0;d<21;d+=2)history.push({user_id:'d-ana',day:day(now-(21-d)*DAY),readiness:Math.max(0,r.v-Math.round((21-d)*.5)),stage:'Building'})}catch(e){}
@@ -1958,10 +1989,10 @@ async function pushProgress(force){
 function adoptMerged(server){if(!server)return;const m=P.merge(S,server);for(const k in S)if(!(k in m))delete S[k];Object.assign(S,m);try{sanS()}catch(e){}RAWSAVE()}
 let _sumKey='';
 async function pushSummary(){
-  const rd=P.readiness(S);const sc={};rd.rows.forEach(r=>{if(r.evidence>0)sc[r.t]=Math.round(1000*r.score)/1000});
-  const row={user_id:X.user.id,readiness:rd.v,stage:rd.stage,points:Math.round(10*P.pointsTotal(S))/10,section_scores:sc,
+  const rd=P.readiness(S);const sc={},cf={};rd.rows.forEach(r=>{if(r.evidence>0){sc[r.t]=Math.round(1000*r.score)/1000;cf[r.t]=Math.round(100*r.conf)/100}});
+  const row={user_id:X.user.id,readiness:rd.v,stage:rd.stage,points:Math.round(10*P.pointsTotal(S))/10,section_scores:sc,section_conf:cf,zone_until:rd.zoneUntil?iso(rd.zoneUntil):null,
     recent_full:P.fullExams(S).slice(-3).map(x=>({p:Math.round(x.p),at:iso(x.ts)})),srs_due:P.srsDue(S).length,exam_date:S.examDate||null,updated_at:iso()};
-  const key=JSON.stringify([row.readiness,row.stage,row.points,row.section_scores,row.recent_full,row.srs_due,row.exam_date,P.isoDay()]);
+  const key=JSON.stringify([row.readiness,row.stage,row.points,row.section_scores,row.section_conf,row.zone_until,row.recent_full,row.srs_due,row.exam_date,P.isoDay()]);
   if(key===_sumKey)return;
   await X.api.upsert('user_summary',row,'user_id');
   await X.api.upsert('readiness_history',{user_id:X.user.id,day:P.isoDay(),readiness:rd.v,stage:rd.stage},'user_id,day');
@@ -1988,11 +2019,13 @@ setInterval(()=>{if(X.user)sync()},60000);
 let RAWSAVE=save;
 {const _s=save;RAWSAVE=function(){return _s.apply(this,arguments)};
  save=function(){const r=_s.apply(this,arguments);try{onSave()}catch(e){}return r}}
-let _lightN=(S.light||[]).length;
-function onSave(){const n=(S.light||[]).length;if(n>_lightN){_lightN=n;credit('lightning','light',{n_questions:0})}sched()}
+function onSave(){sched()}
+window.vpLight=()=>{credit('lightning','light',{title:'Lightning round',n_questions:0})};
 // every answered question: answer log, spaced review, miss tags
 {const _q=qUpd;qUpd=function(id,ok){const r=_q.apply(this,arguments);try{onAnswer(id,ok)}catch(e){}return r}}
+const GAMEPG={game:1,agame:1,light:1,games:1,arcade:1};
 function onAnswer(id,ok){
+  if(GAMEPG[V._cur]){const s=S.qstat[id];if(s&&Array.isArray(s.r)&&s.r.length)s.r[s.r.length-1][2]='g'}
   const aid=P.uuid(),sec=P.qSec(id),q=P.qById(id);
   P.queue('answers',{id:aid,question_id:String(id).slice(0,40),section:sec,correct:!!ok,source:String(V._cur||'').slice(0,20),answered_at:iso()});
   if(Q[id])P.srsUpdate(S,id,ok);
@@ -2008,7 +2041,9 @@ function credit(kind,ref,ex){ex=ex||{};const pts=P.pointsFor(kind,ex.n_questions
   RAWSAVE();sched(800)}
 P.credit=credit;
 const secScores=bt=>{const o={};for(const k in bt||{}){const v=bt[k];o[k]=Array.isArray(v)?v:[v.c,v.n]}return o};
+{const _rn=runner;runner=function(list,opt){try{if(opt&&opt.exam&&Array.isArray(list)&&list.length)opt.vpFx=list.filter(q=>!S.qstat[q.id]).length/list.length}catch(e){}return _rn.apply(this,arguments)}}
 window.vpFinish=(opt,r)=>{opt=opt||{};const a=opt.vpAsg||null;
+  if(opt.exam&&typeof opt.vpFx==='number'&&r){r.fx=Math.round(100*opt.vpFx)/100}
   if(opt.exam){credit('full','mock:'+(opt.vk>=0?opt.vk:'random'),{title:r.title||'Mock exam',n_questions:r.n,n_correct:r.c,score_pct:r.p,passed:r.p>=70,section_scores:secScores(r.bt),minutes:r.min,time_limit_min:opt.minutes||null,timed_out:!!(opt.minutes&&r.min>=opt.minutes),n_answered:r.an==null?null:r.an,assignment_id:a})}
   else if(opt.vpSect){S.sect=Array.isArray(S.sect)?S.sect:[];S.sect.push({t:opt.vpSect,c:r.c,n:r.n,ts:Date.now()});credit('section','section:'+opt.vpSect,{title:'Section test · '+P.secShort[opt.vpSect],n_questions:r.n,n_correct:r.c,score_pct:r.p,assignment_id:a})}
   else credit('quiz','quiz:'+(opt.vpRef||opt.unit||'mixed'),{title:opt.title||'Quiz',n_questions:r.n,n_correct:r.c,score_pct:r.p,assignment_id:a});
@@ -2021,9 +2056,9 @@ window.addEventListener('pagehide',()=>{if(_cards>=5){credit('flashcards','cards
 {const _a=arEnd;arEnd=function(){const k=AR&&AR.g&&AR.g.k;const done=AR&&AR.g&&AR.g.st==='end';const r=_a.apply(this,arguments);try{if(!done&&k)credit('arcade','arcade:'+k,{title:'Arcade'})}catch(e){}return r}}
 
 // readiness: the app's own ring and dashboard now use the Pro model
-readinessDetail=function(){const rd=P.readiness(S);return {v:rd.v,bank:rd.bank,cap:rd.cap,why:rd.last2.length>=2?'two':rd.last2.length?'one':'none',seen:rd.seen,enough:rd.seen>=60||rd.fullCount>0,
+readinessDetail=function(){const rd=P.readiness(S);return {v:rd.v,bank:rd.bank,cap:rd.cap,why:rd.last2.length>=2?'two':rd.last2.length?'one':'none',seen:rd.seen,enough:rd.enough,
   rows:rd.rows.map(r=>({t:T[r.t]||{id:r.t,name:P.secName(r.t),n:P.OW[r.t]},acc:r.acc,cov:r.conf,n:r.n,need:r.need})),ms:rd.last2.map(x=>({p:Math.round(x.p)})),pro:rd}};
-RD_TXT=`<b>How readiness works.</b> It estimates your score on the real exam today, weighted like the 8 outline sections. Practice questions count once each, newest answers most. A section test counts 4 times a quiz and a full exam about 10 times, but only for 30 days. With no recent full exam it stops at 80. Open <a href="#" onclick="go('ready');return false">Readiness</a> for the full breakdown.`;
+RD_TXT=`<b>How readiness works.</b> It estimates your score on the real exam today, weighted like the 8 outline sections. Practice questions count once each, newest answers most. A section test counts 4 times a quiz and a full exam about 10 times, but only for 30 days. With no recent full exam it stops at 80. Same-day repeats, game answers and retaken exam forms count less, and reading never raises it. Open <a href="#" onclick="go('ready');return false">Readiness</a> for the full breakdown.`;
 
 // hidden content (admin "hide while under review")
 function applyHidden(set){if(!set||!set.size)return;
@@ -2113,7 +2148,7 @@ P.navSetup=()=>{
   Object.assign(NAVOF,{trainee:'trainer',corr:'admin'});
 };
 
-const secRow=r=>{const sc=Math.round(100*r.score),c=r.conf<1?'':sc>=75?'ok':sc<60?'red':'';return `<tr><td><b>${E(P.secShort[r.t])}</b><div class="small dim vp-long">${E(P.secName(r.t))}</div></td><td class=tnum>${P.OW[r.t]}</td><td style="min-width:110px">${P.bar(sc,c)}<span class="small tnum">${r.evidence?sc+'%':'No data'}</span>${r.conf<1?`<div class="small dim vp-evm">Evidence ${Math.round(100*r.conf)}%</div>`:''}</td><td class="small mut tnum vp-ev">${r.conf>=1?'Enough':'Building ('+Math.round(100*r.conf)+'%)'}</td></tr>`};
+const secRow=r=>{const sc=Math.round(100*r.score),c=r.conf<1?'':sc>=75?'ok':sc<60?'red':'';return `<tr><td><b>${E(P.secShort[r.t])}</b><div class="small dim vp-long">${E(P.secName(r.t))}</div></td><td class=tnum>${P.OW[r.t]}</td><td style="min-width:110px">${P.bar(sc,c)}<span class="small tnum">${r.evidence?sc+'%':'No data'}</span>${r.conf<1?`<div class="small dim vp-evm">${r.evidence?'Not enough data yet':'Not started'} · evidence ${Math.round(100*r.conf)}%</div>`:''}</td><td class="small mut tnum vp-ev">${r.conf>=1?'Enough':r.evidence?'Not enough data ('+Math.round(100*r.conf)+'%)':'Not started'}</td></tr>`};
 V.ready=()=>{const rd=P.readiness(S);const R=P.RZ;
   const exams=rd.recent.slice().reverse();
   render(hdr('Track','Readiness','A 0 to 100 estimate of your score on the real exam today.',`<button class="btn ghost sm" onclick="go('plan')">${ic('cal')}Exam plan</button>`)+
@@ -2122,13 +2157,14 @@ V.ready=()=>{const rd=P.readiness(S);const R=P.RZ;
   <p class=mut style="margin-top:14px">${rd.stage==='Exam Ready Zone'?'You meet every Exam Ready Zone rule. Keep taking a full exam every few days so it stays current.':rd.need.length?'To reach the Exam Ready Zone you still need: '+rd.need.map(E).join('; ')+'.':''}</p></div></div>
   <div class="card" style="margin-top:16px"><h3 style="margin-bottom:10px">What the number means</h3>
   <p class="small mut">Readiness answers one question: if you sat the exam today, about what would you score? It looks at every outline section, weighted by how many questions that section has on the real exam (Terms 28, Provisions 24, MA All Lines 15, Casualty 13, Property 10, MA Auto 8, MA Property 5, MA P&amp;C 2).</p>
-  <p class="small mut">In each section it uses three kinds of evidence. Each practice question counts once, and newer answers count more (an answer loses half its weight every ${21} days). A section test counts like 40 questions. A full exam counts like 100 questions, shared across the sections it covered. Section tests and full exams stop counting after ${R.windowDays} days.</p>
-  <p class="small mut">A section with little evidence is held down until there is enough, so a lucky streak on a few questions does not look like mastery. Full exams also set a ceiling: with no full exam in the last ${R.windowDays} days readiness stops at ${R.capNone}. After one, it can be at most that score plus ${R.capPlus}. After two or more, it blends your practice (60%) with your last two exam scores (40%).</p>
-  <p class="small mut" style="margin:0"><b>Exam Ready Zone</b> needs all three: readiness ${R.zoneMin} or more, 2 full exams at ${R.zoneMin}%+ in the last ${R.zoneDays} days, and no section under ${R.weakSec}%. <b>Closing In</b> starts at ${R.closeMin}. Below that is <b>Building</b>.</p></div>
+  <p class="small mut">In each section it uses three kinds of evidence. Each practice question counts once, and newer answers count more (an answer loses half its weight every ${21} days, and old answers are trimmed a little because memory fades). A section test counts like 40 questions. A full exam counts like 100 questions, shared across the sections it covered. Section tests and full exams stop counting after ${R.windowDays} days.</p>
+  <p class="small mut">Repeats are not mastery. Answering the same question again on the same day counts a quarter, answers given inside games count half, and reading lessons or flipping flashcards never raises readiness (they earn study points only). Only your <b>first try</b> of each full exam form counts as a full exam; a retake of a form you have seen adds a little section evidence but never counts toward the ceiling, the blend or the Exam Ready Zone. A mock exam made mostly of questions you have already answered is treated as a retake.</p>
+  <p class="small mut">A section with little evidence is held down until there is enough, so a lucky streak on a few questions does not look like mastery. Full exams also set a ceiling: with no full exam in the last ${R.windowDays} days readiness stops at ${R.capNone}. After one, it can be at most that score plus ${R.capPlus}. After two or more, it blends your practice (60%) with your last two first-try exam scores (40%).</p>
+  <p class="small mut" style="margin:0"><b>Exam Ready Zone</b> needs all three: readiness ${R.zoneMin} or more, 2 full exams at ${R.zoneMin}%+ in the last ${R.zoneDays} days (first try of each form), and no section under ${R.weakSec}%. <b>Closing In</b> starts at ${R.closeMin}. Below that is <b>Building</b>.</p></div>
   <div class="card" style="margin-top:16px"><h3 style="margin-bottom:10px">By outline section</h3><div class=vp-scroll><table class=vp-tbl><tr><th>Section</th><th>On exam</th><th>Score</th><th class=vp-ev>Evidence</th></tr>${rd.rows.map(secRow).join('')}</table></div></div>
-  <div class="grid g2" style="margin-top:16px"><div class=card><h3 style="margin-bottom:10px">Full exams in the last ${R.windowDays} days</h3>${exams.length?`<table class=vp-tbl>${exams.map(x=>`<tr><td>${E(x.title)}</td><td class="small dim">${E(new Date(x.ts).toLocaleDateString())}</td><td class=tnum><span class="chip ${x.p>=R.zoneMin?'ok':x.p>=70?'blue':'red'}">${Math.round(x.p)}%</span></td></tr>`).join('')}</table>`:`<p class="small mut">None yet. A Pearson-format test or mock exam is the strongest evidence you can add.</p><button class="btn sm" onclick="go('pfmenu')">${ic('mock')}Take a full exam</button>`}</div>
+  <div class="grid g2" style="margin-top:16px"><div class=card><h3 style="margin-bottom:10px">Full exams in the last ${R.windowDays} days</h3>${exams.length?`<table class=vp-tbl>${exams.map(x=>`<tr><td>${E(x.title)}</td><td class="small dim">${E(new Date(x.ts).toLocaleDateString())}${x.first?'':' · <span title="Retake or mostly seen questions: not counted toward the Exam Ready Zone">retake</span>'}</td><td class=tnum><span class="chip ${x.p>=R.zoneMin?'ok':x.p>=70?'blue':'red'}">${Math.round(x.p)}%</span></td></tr>`).join('')}</table>`:`<p class="small mut">None yet. A Pearson-format test or mock exam is the strongest evidence you can add.</p><button class="btn sm" onclick="go('pfmenu')">${ic('mock')}Take a full exam</button>`}</div>
   <div class=card><h3 style="margin-bottom:10px">Study effort</h3><div class=vp-kpi><div><b class=tnum>${Math.round(P.pointsTotal(S,Date.now()-7*DAY))}</b><span>points this week</span></div><div><b class=tnum>${Math.round(P.pointsTotal(S))}</b><span>points total</span></div><div><b class=tnum>${rd.seen}</b><span>different questions</span></div></div>
-  <p class="small dim" style="margin:12px 0 0">Points: quiz question 1, section test 40, full exam 100, flashcard 0.2, game 3. Points show effort; readiness shows results.</p></div></div>`,'ready')};
+  <p class="small dim" style="margin:12px 0 0">Points: quiz question 1, section test 40, full exam 100, flashcard 0.2, game 3, lesson read 0. Points show effort; readiness shows results.</p></div></div>`,'ready')};
 
 // ---- report a problem (everyone, signed in or not)
 V.report=()=>{render(hdr('Account','Report a problem','Something not working? Tell us here and it goes straight to support.')+
@@ -2642,7 +2678,12 @@ const noteOf=id=>(NOTES[id]&&NOTES[id].b)||'';
 // ---- sync bookkeeping
 const PK=PRE+'rdpush:'+NS;let PUSHED={};try{PUSHED=JSON.parse(lsGet(PK)||'{}')||{}}catch(e){PUSHED={}}
 
-function markDone(id,on){const g=rdg();g[id]=on?Date.now():-Date.now();save();readSched(400)}
+// Marking a lesson read is activity (it keeps a reading trainee off the 7-day inactive list) but earns
+// 0 points and never touches readiness. One 'read' event per lesson per day.
+function markDone(id,on){const g=rdg();g[id]=on?Date.now():-Date.now();
+  if(on){try{if(typeof bump==='function')bump();const day=P.isoDay();S.vpRd=S.vpRd&&typeof S.vpRd==='object'?S.vpRd:{};
+    if(S.vpRd[id]!==day&&P.credit){S.vpRd[id]=day;P.credit('read','read:'+id,{title:'Lesson read'})}}catch(e){}}
+  save();readSched(400)}
 function recordQuiz(u,r,miss){const q=rdq(),o=q[u]||{};q[u]={p:r.p,c:r.c,n:r.n,best:Math.max(o.best||0,r.p),ts:Date.now(),tries:(o.tries||0)+1,miss};save();readSched(400)}
 
 // ===================================================================== sync (reading_progress + lesson_notes)
