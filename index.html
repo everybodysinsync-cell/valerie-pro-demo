@@ -442,7 +442,7 @@ details summary::-webkit-details-marker{color:var(--mut)}
 @keyframes vpPulse{50%{opacity:.35}}
 @media (prefers-reduced-motion:reduce){.vp-chip.sync i{animation:none}}
 .vp-status{position:fixed;top:12px;right:14px;z-index:60}
-@media (max-width:1023px){.vp-status{top:calc(8px + env(safe-area-inset-top));bottom:auto;right:8px;font-size:0;gap:0;padding:0;width:22px;height:22px;min-height:0;justify-content:center;opacity:.95}.vp-status.off,.vp-status.err{font-size:.72rem;gap:6px;padding:4px 9px}}
+@media (max-width:1023px){.vp-status{top:env(safe-area-inset-top);bottom:auto;right:0;font-size:0;gap:0;padding:7px;width:44px;height:44px;min-height:44px;justify-content:flex-end;align-items:flex-start;background:transparent!important;border:0!important;box-shadow:none!important}.vp-status i{width:9px;height:9px;box-shadow:0 0 0 3px rgba(6,12,24,.92),0 0 0 4px var(--line2)}.vp-status.off,.vp-status.err{font-size:.72rem;gap:6px;width:auto;height:auto;min-height:44px;padding:9px 12px;align-items:center}.vp-status.off span,.vp-status.err span{background:var(--s2);border:1px solid var(--line2);border-radius:999px;padding:4px 9px}}
 .vp-stage{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-weight:650;font-size:var(--fs-s);border:1px solid}
 .vp-stage.red{color:#ffb3b7;border-color:rgba(255,90,98,.45);background:rgba(229,50,59,.12)}
 .vp-stage.blue{color:var(--blue3);border-color:rgba(91,140,255,.45);background:rgba(47,107,255,.12)}
@@ -527,6 +527,60 @@ details summary::-webkit-details-marker{color:var(--mut)}
 #vpmc td,#vpmt td{white-space:nowrap}
 @media (max-width:600px){#vpsu .small.dim{word-break:break-all}}
 #vpmc th,#vpmt th{white-space:normal;min-width:64px;vertical-align:bottom}
+
+/* ---- UI polish pass 2026-10-29: AA contrast, 44px targets, tables, tabs, alignment ---- */
+:root{--dim:#8a9bbf}
+.btn{background:linear-gradient(180deg,#326cf0,#2a5fe6)}
+.btn.ghost{background:rgba(255,255,255,.03)}
+.btn.red{background:linear-gradient(180deg,#d6303a,#b8232c)}
+.btn.ok{background:linear-gradient(180deg,#18834c,#136b3e)}
+/* tables fill their card; headers never split mid-word */
+#app .card table.vp-tbl{display:table;width:100%;overflow:visible}
+#app .card .vp-scroll>table.vp-tbl{min-width:100%}
+.vp-tbl th,.vp-tbl td{overflow-wrap:break-word;word-break:normal;hyphens:none}
+.vp-tbl th{line-height:1.35}
+.vp-tbl tbody tr:last-child td{border-bottom:0}
+.vp-tbl td.tnum,.vp-tbl th.tnum{font-variant-numeric:tabular-nums}
+#vpmc th,#vpmt th{white-space:normal;min-width:88px;max-width:140px}
+#vpmc th:first-child,#vpmt th:first-child{min-width:0}
+.vp-scroll{scrollbar-width:thin}
+@media (max-width:700px){
+ #vpmc th:first-child,#vpmc td:first-child,#vpmt th:first-child,#vpmt td:first-child{position:sticky;left:0;z-index:1;background:#111c34;box-shadow:1px 0 0 var(--line)}
+ #vpmc th,#vpmt th{min-width:76px}
+ .vp-tbl td,.vp-tbl th{padding-left:6px;padding-right:6px}
+ .vp-tbl th{white-space:normal}
+}
+/* stage scale: labels line up with the three bars */
+.vp-steps,.vp-stlab{max-width:420px}
+/* KPI tiles: tidy grid, values never break */
+.vp-kpi>div{display:flex;flex-direction:column;gap:4px;min-width:0;box-shadow:var(--sh1)}
+.vp-kpi b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:clamp(1.25rem,5vw,1.6rem)}
+.vp-kpi span{line-height:1.35}
+@media (max-width:600px){.vp-kpi{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.vp-kpi>div:last-child:nth-child(odd){grid-column:1/-1}}
+/* tab strips scroll sideways on phones instead of stacking 4 rows deep */
+.vp-tabs button{min-height:40px;transition:background var(--t2),color var(--t2),border-color var(--t2)}
+@media (hover:hover){.vp-tabs button:not(.on):hover{color:var(--txt);background:rgba(255,255,255,.04)}}
+@media (max-width:700px){
+ .vp-tabs.vp-scroll{flex-wrap:nowrap!important;overflow-x:auto;margin-left:-14px;margin-right:-14px;padding:2px 14px 6px;scroll-padding:0 14px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+ .vp-tabs.vp-scroll::-webkit-scrollbar{display:none}
+ .vp-tabs.vp-scroll>button{flex:none;white-space:nowrap}
+ .vp-tabs button{min-height:44px}
+}
+/* home: readiness actions read as a list on phones */
+@media (max-width:600px){.vp-acts{flex-direction:column;align-items:stretch}.vp-acts>.btn{width:100%;justify-content:flex-start;text-align:left}}
+/* 44px touch targets on phones */
+@media (pointer:coarse),(max-width:700px){
+ .btn.ghost,.btn.icon{min-width:44px}
+ details>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+ .vp-tag,.vp-chip:not(.vp-status){min-height:44px}
+ label:has(>input[type=checkbox]),label:has(>input[type=radio]){min-height:44px;display:flex;align-items:center;gap:10px}
+ #vpmc td a,#vpmt td a,.vp-tbl td>a:only-child{display:inline-block;padding:13px 0;margin:-13px 0}
+}
+/* keyboard focus is always visible on Pro controls */
+.vp-tag:focus-visible,.vp-tabs button:focus-visible,.vp-chip:focus-visible,.vp-tbl a:focus-visible,.vp-tbl tr.click:focus-visible{outline:2px solid var(--blue3);outline-offset:2px}
+/* modals fit the visible screen on phones */
+@supports (height:100dvh){.vp-modal>.card{max-height:calc(100dvh - 32px)}}
+@media (max-width:600px){.vp-modal{place-items:end center;padding:12px 10px calc(12px + env(safe-area-inset-bottom))}.vp-modal>.card{border-radius:var(--r4) var(--r4) var(--r3) var(--r3);padding:var(--sp4)}}
 /* ===== VALERIE Pro · Read ===== */
 .rd-top{margin-bottom:var(--sp5)}.rd-top .search input{font-size:16px}
 .rd-sr{margin-top:var(--sp3);max-height:60vh;overflow:auto}.rd-sr .list{display:grid;gap:6px}
@@ -2300,7 +2354,7 @@ function homeExtras(){const pg=document.querySelector('#app .page');if(!pg)retur
   <div class=row style="gap:10px">${dd!=null&&dd>=0?`<div class="vp-kpi" style="grid-template-columns:auto"><div style="padding:10px 14px"><b class=tnum>${dd===0?'Today':dd}</b><span>${dd===0?'exam day':'days to exam'}</span></div></div>`:''}
   <button class="btn ghost sm" onclick="go('ready')">${ic('gauge')}Details</button><button class="btn sm" onclick="go('plan')">${ic('cal')}${rt?'Retake plan':'Today\'s plan'}</button></div></div>
   ${rd.need.length&&rd.stage!=='Exam Ready Zone'?`<p class="small mut" style="margin:10px 0 0">Next for the Exam Ready Zone: ${E(rd.need[0])}.</p>`:''}
-  ${due||open.length||!X.user?`<div class=row style="margin-top:12px;gap:8px">${due?`<button class="btn ghost sm" onclick="go('srs')">${ic('refresh')}${due} missed to review</button>`:''}${open.map(a=>`<button class="btn ghost sm" onclick="PRO.startAsg('${a.id}')">${ic('flag')}${E(a.title)} · due ${E(new Date(a.due_at).toLocaleDateString())}</button>`).join('')}${!X.user&&X.api?`<button class="btn ghost sm" onclick="go('account')">${ic('user')}Sign in to sync</button>`:''}</div>`:''}</div>`;
+  ${due||open.length||!X.user?`<div class="row vp-acts" style="margin-top:12px;gap:8px">${due?`<button class="btn ghost sm" onclick="go('srs')">${ic('refresh')}${due} missed to review</button>`:''}${open.map(a=>`<button class="btn ghost sm" onclick="PRO.startAsg('${a.id}')">${ic('flag')}${E(a.title)} · due ${E(new Date(a.due_at).toLocaleDateString())}</button>`).join('')}${!X.user&&X.api?`<button class="btn ghost sm" onclick="go('account')">${ic('user')}Sign in to sync</button>`:''}</div>`:''}</div>`;
   const hero=pg.querySelector('.hero');pg.insertBefore(box,hero||pg.firstChild);const a2=pg.querySelector('#a2hs');if(a2)pg.prepend(a2)}
 
 // after a quiz result: nothing extra for now (hook kept for later)
