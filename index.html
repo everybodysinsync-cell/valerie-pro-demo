@@ -581,6 +581,15 @@ details summary::-webkit-details-marker{color:var(--mut)}
 /* modals fit the visible screen on phones */
 @supports (height:100dvh){.vp-modal>.card{max-height:calc(100dvh - 32px)}}
 @media (max-width:600px){.vp-modal{place-items:end center;padding:12px 10px calc(12px + env(safe-area-inset-bottom))}.vp-modal>.card{border-radius:var(--r4) var(--r4) var(--r3) var(--r3);padding:var(--sp4)}}
+
+/* Native option lists (Oct 30): options inherited the light text of their select, and a select styled as a button
+   (.btn) has only a gradient, so Chrome/Edge on Windows drew white text on its default white list until hover.
+   Every select now gets a solid surface, a dark color scheme for the native popup, and explicit option colors. */
+select{color-scheme:dark;background-color:#0a1324}
+select.btn,select.btn:hover,select.btn:focus{background-color:#2a5fe6!important;color:#fff}
+select option,select optgroup{color:#edf2fc!important;background-color:#13203a!important}
+select option:checked{color:#fff!important;background-color:#2a5fe6!important}
+select option:disabled{color:#8a97b0}
 /* ===== VALERIE Pro · Read ===== */
 .rd-top{margin-bottom:var(--sp5)}.rd-top .search input{font-size:16px}
 .rd-sr{margin-top:var(--sp3);max-height:60vh;overflow:auto}.rd-sr .list{display:grid;gap:6px}
@@ -707,7 +716,7 @@ function fsz(d){S.ts=Math.min(5,Math.max(-2,(S.ts||0)+d));applyTs();save();if(V.
 const $=id=>document.getElementById(id);const A=()=>$('app');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const xp=e=>{const s=esc(e),i=s.indexOf('Why not ');return i>0?s.slice(0,i)+'<span class=wn>'+s.slice(i)+'</span>':s};
-const P={home:'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+const P={plus:'M12 5v14M5 12h14',home:'M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
 units:'M4 5h16M4 12h16M4 19h10',book:'M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5zM4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3',
 cards:'M7 3h11a2 2 0 0 1 2 2v12M4 7h11a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z',
 quiz:'M9 11l2 2 4-4M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z',
@@ -2426,10 +2435,10 @@ P.tReload=async()=>{if(T_.cls)delete T_.cache[T_.cls];V.trainer()};
 V.trainer=async()=>{
   if(!P.isStaff()){render(hdr('Account','Trainer dashboard','')+`<div class="card empty"><p class=mut style="margin:0">This page is for trainers. Sign in with a trainer account.</p></div>`,'trainer');return}
   const own=X.classes.filter(c=>c.owner_id===X.user.id||P.isAdmin());
-  if(!own.length){render(hdr('Trainer','Trainer dashboard','Create a class to get a 6-digit code for your trainees.')+createBox(),'trainer');return}
+  if(!own.length){render(hdr('Trainer','Trainer dashboard','Create a class to get a 6-digit code for your trainees.')+createBox('trainer',1),'trainer');return}
   if(!T_.cls||!own.some(c=>c.id===T_.cls))T_.cls=own[0].id;
   const cl=own.find(c=>c.id===T_.cls);
-  render(hdr('Trainer',E(cl.name),'',`${own.length>1?`<select class=btn onchange="PRO.tClass(this.value)" aria-label="Class">${own.map(c=>`<option value="${c.id}"${c.id===cl.id?' selected':''}>${E(c.name)}</option>`).join('')}</select>`:''}<button class="btn ghost sm" onclick="PRO.tReload()">${ic('refresh')}Refresh</button><button class="btn ghost sm" onclick="PRO.printClass()">${ic('print')}Print class report</button>`)+`<div class="card empty"><p class=mut style="margin:0">Loading class data…</p></div>`,'trainer');
+  render(hdr('Trainer',E(cl.name),'',`${own.length>1?`<select class="btn vp-clsel" onchange="PRO.tClass(this.value)" aria-label="Class">${own.map(c=>`<option value="${c.id}"${c.id===cl.id?' selected':''}>${E(c.name)}</option>`).join('')}</select>`:''}<button class="btn sm" id=vpnewbtn onclick="PRO.showNewClass('trainer')">${ic('plus')}New class</button><button class="btn ghost sm" onclick="PRO.tReload()">${ic('refresh')}Refresh</button><button class="btn ghost sm" onclick="PRO.printClass()">${ic('print')}Print class report</button>`)+`<div class="card empty"><p class=mut style="margin:0">Loading class data…</p></div>`,'trainer');
   let d;try{d=T_.cache[cl.id]&&Date.now()-T_.cache[cl.id].t<60000?T_.cache[cl.id]:await load(cl.id)}catch(e){P.fail(e);return}
   if(V._cur!=='trainer')return;
   const tabs=[['week','This week'],['roster','Roster'],['heat','Heat map'],['missed','Most missed'],['pacing','Exam pacing'],['asg','Assignments'],['ann','Announcements'],['flags','Flags'+(d.flags.filter(f=>f.status==='open').length?' ('+d.flags.filter(f=>f.status==='open').length+')':'')],['results','Exam results']];
@@ -2438,8 +2447,10 @@ V.trainer=async()=>{
   pg.lastElementChild.outerHTML=`<div class="vp-code" style="margin-bottom:16px"><span class="small mut">Class code</span><b class=tnum>${E(cl.join_code)}</b><span class="small dim">Trainees enter this under Account &amp; class.</span></div>
   <div class="vp-tabs vp-scroll" role=tablist>${tabs.map(t=>`<button role=tab class="${T_.tab===t[0]?'on':''}" onclick="PRO.tTab('${t[0]}')">${t[1]}</button>`).join('')}</div><div id=vptb>${body(d,cl)}</div>`;
 };
-function createBox(){return `<div class="card vp-form" style="max-width:520px"><h3 style="margin-bottom:10px">New class</h3><label><span>Class name</span><input id=vpcn maxlength=80 placeholder="e.g. Spring 2027 Personal Lines"></label><button class=btn onclick="PRO.newClass()">Create class</button></div>`}
-P.newClass=async()=>{const n=(document.getElementById('vpcn')||{}).value;if(!n||!n.trim()){toast('Name the class','alert');return}try{await X.api.createClass(n.trim());await P.loadClasses();T_.cls=null;V.trainer()}catch(e){P.fail(e)}};
+/* New class: always reachable from the trainer header and the master view (button id vpnewbtn); first class shows the box directly */
+function createBox(back,first){return `<div class="card vp-form" id=vpnewcls style="max-width:520px;margin-bottom:16px"><h3 style="margin-bottom:10px">New class</h3><p class="small mut" style="margin:0 0 10px">You get a 6-digit class code to give your trainees.</p><label><span>Class name</span><input id=vpcn maxlength=80 placeholder="e.g. Spring 2027 Personal Lines" onkeydown="if(event.key==='Enter')PRO.newClass('${back}')"></label><div class=row style="gap:8px"><button class=btn id=vpcnok onclick="PRO.newClass('${back}')">Create class</button>${first?'':`<button class="btn ghost" onclick="PRO.showNewClass('${back}')">Cancel</button>`}</div></div>`}
+P.showNewClass=back=>{const old=document.getElementById('vpnewcls');if(old){old.remove();return}const ph=document.querySelector('#app .page .ph');if(!ph)return;ph.insertAdjacentHTML('afterend',createBox(back));const b=document.getElementById('vpnewcls');if(b&&b.scrollIntoView)b.scrollIntoView({block:'center'});const i=document.getElementById('vpcn');if(i)i.focus({preventScroll:true})};
+P.newClass=async back=>{const n=(document.getElementById('vpcn')||{}).value;if(!n||!n.trim()){toast('Name the class','alert');return}try{let c=await X.api.createClass(n.trim());if(Array.isArray(c))c=c[0];await P.loadClasses();toast('Class created'+(c&&c.join_code?': code '+c.join_code:''),'check');if(P.mDirty)P.mDirty();T_.cls=c&&c.id||null;T_.tab='week';if(V._cur==='trainer')V.trainer();else go('trainer')}catch(e){P.fail(e)}};
 // ---- This week (in-app only; trainers open the app to see it)
 function tWeek(d){const w=d.wk||{},ro=d.ro;const risk=ro.filter(r=>r.at_risk||r.nudge);const zone=ro.filter(r=>r.stage==='Exam Ready Zone').length;
   return `<div class=vp-kpi><div><b class=tnum>${w.active||0}/${w.members||ro.length}</b><span>studied in the last 7 days</span></div><div><b class=tnum>${w.sessions||0}</b><span>sessions</span></div><div><b class=tnum>${w.full_exams||0}</b><span>full exams taken</span></div><div><b class=tnum>${zone}</b><span>in the Exam Ready Zone</span></div><div><b class=tnum>${risk.length}</b><span>need attention</span></div></div>
@@ -2572,7 +2583,7 @@ const shortUA=ua=>{ua=String(ua||'');const dev=/iPhone/.test(ua)?'iPhone':/iPad/
 const fmtT=t=>t?new Date(t).toLocaleString([], {month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'';
 
 // ===================================================================== master: all classes
-const M_={d:null,t:0};
+const M_={d:null,t:0};P.mDirty=()=>{M_.d=null};
 P.mReload=()=>{M_.d=null;V.master()};
 P.mOpen=id=>{P.T_.cls=id;P.T_.tab='roster';go('trainer')};
 async function mData(){if(M_.d&&Date.now()-M_.t<60000)return M_.d;M_.d=await X.api.orgMetrics();M_.t=Date.now();return M_.d}
@@ -2586,14 +2597,14 @@ function trendSvg(tr){if(!tr||tr.length<2)return '<p class="small mut">Not enoug
   <div class="row small dim" style="justify-content:space-between"><span>${E(tr[0].week_end)}</span><span>dashed line = ${P.RZ.zoneMin} (Exam Ready Zone)</span><span>${E(tr[tr.length-1].week_end)}</span></div>
   <table class=vp-tbl style="margin-top:10px"><tr><th>Week ending</th><th>Avg readiness</th><th>In the Exam Ready Zone</th></tr>${tr.slice().reverse().map(x=>`<tr><td class=small>${E(x.week_end)}</td><td class=tnum>${x.avg_readiness}</td><td class=tnum>${x.erz} of ${x.n}</td></tr>`).join('')}</table>`}
 V.master=async()=>{if(!P.isAdmin()){noAccess('master','All classes');return}
-  const btns=`<button class="btn ghost sm" onclick="PRO.mReload()">${ic('refresh')}Refresh</button><button class="btn sm" onclick="PRO.printOrg()">${ic('print')}Print report</button>`;
+  const btns=`<button class="btn sm" id=vpnewbtn onclick="PRO.showNewClass('master')">${ic('plus')}New class</button><button class="btn ghost sm" onclick="PRO.mReload()">${ic('refresh')}Refresh</button><button class="btn sm" onclick="PRO.printOrg()">${ic('print')}Print report</button>`;
   render(hdr('Master','All classes','Every class and trainer in one place.',btns)+'<div class="card empty"><p class=mut style="margin:0">Loading…</p></div>','master');
   let d;try{d=await mData()}catch(e){P.fail(e);return}if(V._cur!=='master')return;const t=d.totals||{};
   render(hdr('Master','All classes','Every class and trainer in one place. Click a class to see its trainees.',btns)+
   `<div class=vp-kpi id=vpmk><div><b class=tnum>${t.classes||0}</b><span>classes</span></div><div><b class=tnum>${t.trainers||0}</b><span>trainers</span></div><div><b class=tnum>${t.active7||0}/${t.trainees||0}</b><span>trainees studied in the last 7 days</span></div><div><b class=tnum>${t.at_risk||0}</b><span>need attention</span></div><div><b class=tnum>${nz(t.avg_readiness)}</b><span>average readiness</span></div><div><b class=tnum>${t.first_pass_rate!=null?t.first_pass_rate+'%':'–'}</b><span>passed the first time${t.results?' ('+t.first_pass+' of '+t.results+')':''}</span></div></div>
   <div class="grid g2" style="margin-top:16px"><div class=card><h3 style="margin-bottom:10px">Where everyone is</h3>${stageBar(d.stages||{},t.trainees)}</div>
   <div class=card><h3 style="margin-bottom:10px">Weakest sections, all classes</h3>${(d.weak_sections||[]).length?`<table class=vp-tbl>${d.weak_sections.slice(0,5).map(w=>{const p=Math.round(100*w.avg);return `<tr><td><b>${E(P.secShort[w.section]||w.section)}</b></td><td style="min-width:120px">${P.bar(p,P.secBand(p))}</td><td class=tnum>${p}%</td></tr>`}).join('')}</table>`:'<p class="small mut">No section scores yet.</p>'}</div></div>
-  <div class=card style="margin-top:16px"><h3 style="margin-bottom:10px">Classes</h3><div class=vp-scroll><table class=vp-tbl id=vpmc><tr><th>Class</th><th>Trainer</th><th>Trainees</th><th>Avg readiness</th><th>In the Exam Ready Zone</th><th>Studied last 7 days</th><th>Mock exam avg</th><th>Need attention</th><th>Passed first time</th></tr>
+  <div class=card style="margin-top:16px"><div class=row style="justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><h3 style="margin:0">Classes</h3><button class="btn sm" id=vpnewbtn2 onclick="PRO.showNewClass('master')">${ic('plus')}New class</button></div><div class=vp-scroll><table class=vp-tbl id=vpmc><tr><th>Class</th><th>Trainer</th><th>Trainees</th><th>Avg readiness</th><th>In the Exam Ready Zone</th><th>Studied last 7 days</th><th>Mock exam avg</th><th>Need attention</th><th>Passed first time</th></tr>
   ${(d.classes||[]).map(c=>`<tr><td><a href="#" onclick="PRO.mOpen('${E(c.id)}');return false"><b>${E(c.name)}</b></a></td><td class=small>${E(c.trainer||'')}</td><td class=tnum>${c.members}</td><td>${rdCell(c.avg_readiness)}</td><td class=tnum>${c.erz}${c.erz_pct!=null?' <span class="small dim">('+c.erz_pct+'%)</span>':''}</td><td class=tnum>${c.active7}/${c.members}</td><td class=tnum>${c.mock_avg!=null?Math.round(c.mock_avg)+'%':'–'}</td><td class=tnum>${c.at_risk?`<span class="chip red">${c.at_risk}</span>`:'0'}</td><td>${passCell(c.first_pass_rate,c.first_pass,c.results)}</td></tr>`).join('')}</table></div>
   <p class="small dim" style="margin:10px 0 0">Mock exam avg = full exams in the last 30 days. Passed first time = each trainee's first logged exam result; shown once a class has 5 or more results.</p></div>
   <div class=card style="margin-top:16px"><h3 style="margin-bottom:10px">Trainers</h3><div class=vp-scroll><table class=vp-tbl id=vpmt><tr><th>Trainer</th><th>Classes</th><th>Trainees</th><th>Avg readiness</th><th>In the Exam Ready Zone</th><th>Studied last 7 days</th><th>Need attention</th><th>Passed first time</th></tr>
